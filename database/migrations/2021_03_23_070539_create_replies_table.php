@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateArticlesTable extends Migration
+class CreateRepliesTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,21 +13,23 @@ class CreateArticlesTable extends Migration
      */
     public function up()
     {
-        Schema::create('articles', function (Blueprint $table) {
+        Schema::create('replies', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id');
-            $table->string('title');
-            $table->text('excerpt');
-            $table->text('body');
-            $table->unsignedBigInteger('best_replies_id')->nullable();
+            $table->unsignedBigInteger('article_id');
+            $table->string('body');
             $table->timestamps();
+
             $table->foreign('user_id')
             ->references('id')
             ->on('users')
             ->onDelete('cascade');
-    
-    });
 
+            $table->foreign('article_id')
+            ->references('id')
+            ->on('articles')
+            ->onDelete('cascade');
+        });
     }
 
     /**
@@ -37,6 +39,6 @@ class CreateArticlesTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('articles');
+        Schema::dropIfExists('replies');
     }
 }

@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Tag;
 use App\Article;
+use App\User;
 use Illuminate\Http\Request;
 
 class ArticleController extends Controller
@@ -10,68 +12,67 @@ class ArticleController extends Controller
 
 	public function index()
 	{
-		$articles = Article::latest()->get();
+        if(request('tag')){
+            $articles = Tag::where('name', request('tag'))->firstOrFail()->articles;
+            }
+            else {
+
+              $articles = Article::all();
+		      // $articles = Article::latest()->get();
+                
+            }
 
 		return view('article.index', ['articles' => $articles]);
 	}
 
-    public function show($id)
+    public function show(Article $article)
     {
-    	$article = Article::find($id);
+    	// $article = Article::findOrFail($id);
 
     	return view('article.show', ['article' => $article ]);
     }
 
     public function create()
     {
-    	return view('article.create');
+    	return view('article.create', [
+            'tags' => Tag::all()
+        ]);
     }
 
     public function store()
     {
-        request()->validate([
-            'title' => 'required',
-            'excerpt' => 'required',
-            'body' => 'required',
-        ]);
-        // dump(request()->all());
-        $article = new Article();
+        //Create New Article
 
-        $article->title = request('title');
-        $article->excerpt = request('excerpt');
-        $article->body = request('body');
+        // dd(request()->all());
+        $this->validateArticle();
 
+        $article = new Article(request(['title', 'excerpt', 'body']));
+        $article->user_id = 1;
         $article->save();
 
-
-        return redirect('/articles');
+        $article->tags()->attach(request('tags'));
+        // $article->tags()->attach($tag);
+        return redirect(route('article.index'));
     }
 
-    public function edit($id)
+    public function edit(Article $article)
     {
-        $article = Article::find($id);
-
-
-        // return view('article.edit' ['article' => $article]);
         return view('article.edit', compact('article'));
     }
 
-    public function update($id)
+    public function update(Article $article)
     {
-        $article = Article::find($id);
+        $article->update($this->validateArticle());
+        return redirect($article->path());
+    }
 
-        request()->validate([
+    protected function validateArticle()
+    {
+        return request()->validate([
             'title' => 'required',
             'excerpt' => 'required',
             'body' => 'required',
+            'tags' => 'exists:tags,id'
         ]);
-
-        $article->title = request('title');
-        $article->excerpt = request('excerpt');
-        $article->body = request('body');
-
-        $article->save();
-
-        return redirect('/articles/' .$article->id);
     }
 }
